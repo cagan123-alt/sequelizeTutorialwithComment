@@ -39,7 +39,20 @@ const User=sequelize.define('user',{
     },
     age:{
         type:Sequelize.DataTypes.INTEGER,
-        defaultValue:17
+        defaultValue:17,
+        validate:{
+            isOldEnough(value){
+                if(value<21){
+
+
+                    throw new Error("Too young")
+                }
+
+            },
+            isNumeric:{
+                msg:"Give a number" // instead of isNumeric true you can customize it if you give arguemts in this kind of thing give it args: values... msg:"No"
+            }
+        }
     },
     description:{
         type:Sequelize.DataTypes.STRING,
@@ -57,12 +70,35 @@ const User=sequelize.define('user',{
         type:Sequelize.DataTypes.VIRTUAL,
         get(){
             return this.username + ' ' + this.description
+        },
+
+    
+    },
+    email:{
+        type:Sequelize.DataTypes.STRING,
+        unique:true, //unique constraint
+        allowNull:true, //allow null
+        validate: {    //validatiors
+           // isEmail:true   //Checks if email built in in sequelize
+           myemailvalidator(value){
+            if(value===null){ //doesnt make null check cause when you give empty field it is undefined not null spesificly nulls are checked here
+                throw new Error("Empty field")
+            }
+           }
         }
     }
 
 },{
     freezeTableName:true,    //ADI AYNI YAPAR  S EKLEMEZ SONUNA 
     timestamps:false,       //UPDATED AT DELETED ATI ONLER
+    validate:{    //Model wide validator
+        usernamePassMatch(){
+            if(this.username===this.password){
+                throw new Error("User name and password cant be same")
+            }
+        }
+    },
+    paranoid:true,            //Paranoid tables timestamp should be true if you want table to be paranoid
 }
 
 
@@ -175,7 +211,15 @@ User.findOne({where:{
    console.log( data.aboutUser )
 })
 
+  /*const user = User.build({
+    email: "css",
+    age:19
+}
+)
+return user.validate().then((data)=>{console.log(data);})
+*/
 
+// return User.findOne({paranoid:false})  return alldata including soft deleted ones
 
 }).then((data)=>{
     
@@ -212,6 +256,14 @@ User.findOne({where:{
    /*const{ count,rows}=data
    console.log(count);
    console.log(rows);*/        // RETURNED VALUE FROM FINDANDCOUNTALL COUNT IS NUMBER OF FIND ROWS AND ROWS IS THE FIND ROWS
+
+
+
+   // Assosiations are really good explained here : https://sequelize.org/docs/v6/core-concepts/assocs/
+
+
+   //hasOne() belongsTo() hasMany() belongsToMany()  methodları kullanılır sonrasında optionstan ONDELETE ONUPDATE AYARLANABILIR
+   //If you are stuck go back and look at that : https://www.youtube.com/watch?v=HJGWu0cZUe8&list=PLkqiWyX-_Lov8qmMOVn4SEQwr9yOjNn3f&index=11
 }).catch((err)=>{
     console.log("ERROR"+ err);
 })
